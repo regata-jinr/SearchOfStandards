@@ -177,6 +177,7 @@ a:                          data_ident_REF(currentRow_p, IZ, PPM, ERR)
             DataGridView_Appropriate_Standards.Rows.Clear()
             DataGridView_Appropriate_Standards.Columns.Clear()
             DataGridView_Appropriate_Standards.Columns.Add("File_Name", "Имя файла")
+            DataGridView_Appropriate_Standards.Columns("File_Name").Frozen = True
 
             Dim g As Graphics = DataGridView_Appropriate_Standards.CreateGraphics()
             Dim offset As Integer = Convert.ToInt32(Math.Ceiling(g.MeasureString("  ", DataGridView_Appropriate_Standards.Font).Width))
@@ -477,6 +478,8 @@ a:                          data_ident_REF(currentRow_p, IZ, PPM, ERR)
                 DataGridView_Appropriate_Standards.Rows.Clear()
                 DataGridView_Appropriate_Standards.Columns.Clear()
                 DataGridView_Appropriate_Standards.Columns.Add("File_Name", "Имя файла")
+                DataGridView_Appropriate_Standards.Columns("File_Name").Frozen = True
+
 
                 Dim g As Graphics = DataGridView_Appropriate_Standards.CreateGraphics()
                 Dim offset As Integer = Convert.ToInt32(Math.Ceiling(g.MeasureString("  ", DataGridView_Appropriate_Standards.Font).Width))
