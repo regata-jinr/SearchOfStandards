@@ -1,4 +1,10 @@
-﻿Public Class Main
+﻿Imports Squirrel
+Imports System.Net
+Imports File = System.IO.File
+Imports System.IO
+Imports System.Threading.Tasks
+
+Public Class Main
 
     Public List_Of_Files(), Elements_In_Standards(,) As String
 
@@ -7,6 +13,42 @@
     Public Dimension_i, Dimension_j As Integer
     Public FSI() As IO.FileSystemInfo
     Public Info As IO.FileSystemInfo
+
+    Async Function GetUpdate() As Task
+        Try
+            Dim restart As Boolean = False
+            Dim latestExe As String = ""
+
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12
+            Using manager = Await UpdateManager.GitHubUpdateManager("https://github.com/regata-jinr/SearchOfStandards")
+                Dim upd As UpdateInfo = Await manager.CheckForUpdate()
+
+                If upd.ReleasesToApply.Any() Then
+                    System.Diagnostics.Process.Start("https://github.com/regata-jinr/SearchOfStandards/releases/latest")
+
+                    Dim LatestVersion = upd.ReleasesToApply.OrderBy(Function(x) x.Version).Last()
+                    Await manager.DownloadReleases(upd.ReleasesToApply)
+                    Await manager.ApplyReleases(upd)
+                    Await manager.UpdateApp()
+
+                    latestExe = Path.Combine(manager.RootAppDirectory, String.Concat("app-", LatestVersion.Version.Version.Major, ".", LatestVersion.Version.Version.Minor, ".", LatestVersion.Version.Version.Build, "."), "CalcConc.exe")
+                    restart = True
+                End If
+            End Using
+
+            If restart Then
+                UpdateManager.RestartApp(latestExe)
+            End If
+
+        Catch empty As InvalidOperationException
+            ' in case of updates files don't exist
+            'TODO: add handle running setup.exe from latest release page
+            MsgBox("Обновление не доступно. Пожалуйста, обратитесь к администратору", MsgBoxStyle.Critical)
+
+        Catch ex As Exception
+            MsgBox(ex.ToString, MsgBoxStyle.Critical)
+        End Try
+    End Function
 
     Public Sub ElmntInStndrtsInit()
         Dim DI As IO.DirectoryInfo
@@ -51,17 +93,15 @@
 
     End Sub
 
-    Private Sub Main_Shown(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Shown
+    Private Async Sub Main_Shown(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Shown
         Try
+            Await GetUpdate()
+
             Me.Text = "Поиск стандартов - " & Application.ProductVersion
             Me.CheckedListBox_Separate_Elements.Items.AddRange(Split(My.MySettings.Default.StandartElement, ","))
             Me.ElmntInStndrtsInit()
 
-            'For Each Me.Info In Me.FSI
-            'Work_With_File_Of_Standards(Me.Info.Name, i, Dimension_j)
-            '  Next
 
-            'MaskedTextBox_Error.Text = "30.00"
 
         Catch ex As System.IO.DirectoryNotFoundException
             MsgBox(ex.Message & " || Операция была отменена (ошибка в Main_Shown; возможно, директория C:\WORKPROG\REF не существует)!", MsgBoxStyle.Critical, Me.Text)
